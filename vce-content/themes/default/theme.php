@@ -15,10 +15,10 @@ function footer() {
 	// 	echo round($totaltime,3) . " @ " . round(memory_get_usage()/1024,2);
 }
 
-global $site;
+global $vce;
 
 //add javascript for theme specific things
-$site->add_script($site->theme_path . '/js/scripts.js','jquery');
+$vce->site->add_script($vce->site->theme_path . '/js/scripts.js','jquery');
 
 //add stylesheet
-$site->add_style($site->theme_path . '/css/style.css', 'ccce-theme-style');
+$vce->site->add_style($vce->site->theme_path . '/css/style.css', 'ccce-theme-style');
