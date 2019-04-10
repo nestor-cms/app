@@ -588,7 +588,7 @@ $continue_message = ($carryon == 'wait' ? 'Submit Form First' : 'Continue');
 $continue_button = <<<EOF
 <div class="inner">
 <div class="clickbar-container">
-<div class="clickbar-content” style="display: block;">
+<div class="clickbar-contentÂ” style="display: block;">
 <!-- <form class="inline-form asynchronous-form" method="post" action="$this_file">
 <input type="hidden" name="direction" value="back">
 <input type="submit" value="Back (temporary)">
@@ -1611,7 +1611,7 @@ INSERT INTO `vce_components_meta` (`id`, `component_id`, `meta_key`, `meta_value
 (15, 3, 'created_by', '1', ''),
 (16, 3, 'created_at', '1460412330', ''),
 (17, 3, 'title', 'Admin', ''),
-(18, 3, 'type', 'Locations', ''),
+(18, 3, 'type', 'Location', ''),
 (19, 4, 'created_by', '1', ''),
 (20, 4, 'created_at', '1460412330', ''),
 (21, 4, 'title', 'Manage Recipes', ''),
