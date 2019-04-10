@@ -495,8 +495,10 @@ $GLOBALS['content'] .= <<<EOF
 </html>
 EOF;
 
-//navigation buttons 
-back_continue($_SESSION['carryon']);
+//navigation buttons
+if (isset($_SESSION['carryon'])) {
+	back_continue($_SESSION['carryon']);
+}
  
 echo $GLOBALS['content'];
 
