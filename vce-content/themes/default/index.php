@@ -40,10 +40,6 @@ Coaching Companion<div class="trademark">&#8482;</div>
 <div class="inner">
 <div id="info-bar-left">
 <?php $content->breadcrumb(); ?>
-<br>
-<?php if (isset($user->user_id)) { ?>
-<?php $content->notification_badge(); ?>
-<?php } ?>
 </div>
 
 <div id="info-bar-right">
@@ -68,8 +64,6 @@ Coaching Companion<div class="trademark">&#8482;</div>
 <?php if (isset($page->message)) { ?>
 <div class="form-message form-success"><?php echo $page->message; ?><div class="close-message">x</div></div>
 <?php } ?>
-
-<?php $content->notification_bar(); ?>
 
 <?php $content->output(array('admin', 'premain', 'main', 'postmain')); ?>
 
