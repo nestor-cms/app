@@ -53,7 +53,7 @@ class ManageComponents extends Component {
         // get all installed components
         foreach (array('vce-content', 'vce-application') as $components_dir) {
 
-            $directory_itor = new RecursiveDirectoryIterator(BASEPATH . $components_dir . DIRECTORY_SEPARATOR .'components' . DIRECTORY_SEPARATOR);
+            $directory_itor = new RecursiveDirectoryIterator(BASEPATH . $components_dir . '/' .'components' . '/');
             $filter_itor = new RecursiveCallbackFilterIterator($directory_itor, function ($current, $key, $iterator) {
 
                 // Skip hidden files and directories.
@@ -71,7 +71,8 @@ class ManageComponents extends Component {
                 } else {
                     // Only consume .php files that are in a directory of the same name.
                     $ok = fnmatch("*.php", $current->getFilename());
-                    $dirs = explode(DIRECTORY_SEPARATOR, $current->getPathname());
+                    $path =str_replace('\\', '/', $current->getPathname());
+                    $dirs = explode('/',$path);
                     $ok = $ok && (($dirs[count($dirs) - 2] . '.php') === $current->getFilename());
                     return $ok;
                 }
@@ -159,6 +160,8 @@ class ManageComponents extends Component {
 
                     // if ASSETS_URL has been set, hide delete because site is using a shared vce
                     if (!isset($activated_components[$type]) && !defined('ASSETS_URL')) {
+                    
+                    	$component_path = str_replace('\\', '/', $component_path);
 
                         $content .= <<<EOF
 <form id="$type-remove" class="delete-component" method="post" action="$vce->input_path" autocomplete="off">
@@ -336,7 +339,7 @@ EOF;
                     if ($value['parent'] != "Component") {
                         $components_minions['enabled_' . strtolower($value['parent'])][$value['type']] = $value['url'];
                     }
-
+    
                     $components_list[$value['type']] = $value['url'];
 
                 }

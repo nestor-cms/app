@@ -23,17 +23,17 @@ class User {
         if (!empty($user_session)) {
 
             // get user info object
-           	// $user_object = $_SESSION['user'];
+            // $user_object = $_SESSION['user'];
 
             // set user info values
-            // foreach ($user_object as $key => $value) 
+            // foreach ($user_object as $key => $value)
             foreach ($user_session as $key => $value) {
                 $this->$key = $value;
             }
-            
+
             // set session
             // $_SESSION['user'] = $this;
-			// self::store_session($this, $vce);
+            // self::store_session($this, $vce);
 
             // a good session, return to exit this method
             return true;
@@ -128,7 +128,7 @@ class User {
 
             // set session
             //$_SESSION['user'] = $this;
-			self::store_session($this, $vce);
+            self::store_session($this, $vce);
 
         }
 
@@ -272,12 +272,11 @@ class User {
 
             // delete user session
             if (isset($_SESSION)) {
-            	unset($_SESSION['user']);
-            	
-            	// Destroy all data registered to session
-            	session_destroy(); 
-            }
+                unset($_SESSION['user']);
 
+                // Destroy all data registered to session
+                session_destroy();
+            }
 
             // load logout hook
             if (isset($vce->site->hooks['user_logout_complete'])) {
@@ -285,15 +284,14 @@ class User {
                     call_user_func($hook, $user_id);
                 }
             }
-            
+
             // load logout hook
             if (isset($vce->site->hooks['user_logout_override'])) {
                 foreach ($vce->site->hooks['user_logout_override'] as $hook) {
                     call_user_func($hook, $user_id);
                 }
             }
-            
-            
+
         }
 
     }
@@ -318,7 +316,7 @@ class User {
 
         // clear user session
         if (isset($_SESSION)) {
-    		unset($_SESSION['user']);
+            unset($_SESSION['user']);
         }
 
         // clear user object properties
@@ -397,13 +395,13 @@ class User {
                 foreach ($user_object as $key => $value) {
                     $this->$key = $value;
                 }
-                
-				// hook 
-				if (isset($vce->site->hooks['user_make_user_object'])) {
-					foreach ($vce->site->hooks['user_make_user_object'] as $hook) {
-						call_user_func($hook, $this, $vce);
-					}
-				}
+
+                // hook
+                if (isset($vce->site->hooks['user_make_user_object'])) {
+                    foreach ($vce->site->hooks['user_make_user_object'] as $hook) {
+                        call_user_func($hook, $this, $vce);
+                    }
+                }
 
                 return self::store_session($this, $vce);
 
@@ -414,13 +412,12 @@ class User {
             // user is not logged-in, role_id is set to x, because x is fun and "I want to believe."
             $this->role_id = "x";
             $this->session_vector = self::create_vector();
-            
+
             return self::store_session($this, $vce);
 
         }
 
     }
-    
 
     /**
      * Starts session
@@ -522,27 +519,25 @@ class User {
             }
 
         }
-        
-
 
         // generate a new session id key
         // session_regenerate_id(true);
-        
-        // hook 
+
+        // hook
         if (isset($vce->site->hooks['user_store_session_override'])) {
             foreach ($vce->site->hooks['user_store_session_override'] as $hook) {
                 call_user_func($hook, $user_object, $vce);
             }
-		}
+        }
 
-		// check if php sessions are being used
-		if (isset($_SESSION)) {
-       		// store standard php session 
-       	 	$_SESSION['user'] = $user_object;
-       	}
-        
-      	return true;
-      	
+        // check if php sessions are being used
+        if (isset($_SESSION)) {
+            // store standard php session
+            $_SESSION['user'] = $user_object;
+        }
+
+        return true;
+
     }
 
     /**
@@ -556,14 +551,14 @@ class User {
             foreach ($vce->site->hooks['user_start_session_override'] as $hook) {
                 return call_user_func($hook, $vce);
             }
-		}
-		
+        }
+
         // hook that can be used to create a session handler
         if (isset($vce->site->hooks['user_sys_session_method'])) {
             foreach ($vce->site->hooks['user_sys_session_method'] as $hook) {
                 call_user_func($hook, $vce);
             }
-		}
+        }
 
         // set hash algorithm
         ini_set('session.hash_function', 'sha512');
@@ -619,13 +614,400 @@ class User {
 
         // start the session
         session_start();
-        
+
         // get the user session
         $user_session = isset($_SESSION['user']) ? $_SESSION['user'] : false;
-        
+
         // return the user session value
         return $user_session;
+
+    }
+
+    /**
+     * Return true if the user exists (based on email in use)
+     *
+     * @param string $email
+     * @return boolean true if user exists
+     */
+    public static function user_exists($email) {
+
+        global $db;
+
+        $lookup = user::lookup($email);
+
+        // check
+        $query = "SELECT id FROM " . TABLE_PREFIX . "users_meta WHERE meta_key='lookup' and meta_value='" . $lookup . "'";
+        $lookup_check = $db->get_data_object($query);
+
+        if (!empty($lookup_check)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+	
+	/**
+	 * Method to create and return a random password
+	 */
+    public static function generate_password() {
+
+        // anonymous function to generate password
+        $random_password = function ($password = null) use (&$random_password) {
+            $charset = "+-*#@!?0123456789abcdefghijklmnopqrstuxyvwzABCDEFGHIJKLMNOPQRSTUXYVWZ";
+            $newchar = substr($charset, mt_rand(0, (strlen($charset) - 1)), 1);
+            if (strlen($password) == 8) {
+                return $password;
+            }
+            return $random_password($password . $newchar);
+        };
+
+        // get a new random password
+        return $random_password();
+    }
+
+    /**
+     * Set the current user's password
+     *
+     * @param array $input
+     * @return return error message if there is an error, otherwise null
+     */
+	public function update_user_password($input) {
+	
+		global $vce;
+
+		if (strlen($input['password']) < 6) {
+            return 'Passwords must be least 6 characters in length';
+		}
+			
+		if (!preg_match("#[0-9]+#", $input['password'])) {
+			return 'Password must include at least one number';
+		}
+
+		if (!preg_match("#[a-z]+#", $input['password'])) {
+			return 'Password must include at least one letter';
+		}
+
+		if (!preg_match("#\W+#", $input['password'])) {
+			return 'Password must include at least one symbol';
+		}	
+
+		if ($input['password'] != $input['password2']) {
+			return 'Passwords do not match';
+		}
+		
+		// call to user class to create_hash function
+		$hash = user::create_hash($vce->user->email, $input['password']);
+			
+		// update hash
+		$update = array('hash' => $hash);
+		$update_where = array( 'user_id' => $vce->user->user_id);
+		$vce->db->update('users', $update, $update_where);
+
+		return null;
+    }
+    
+    /* 
+    ** CRUD (Create Update Read Delete) functions below
+    */
+
+    /**
+     * Create a new user
+     *
+     * @param string $attributes array of attributes and values.  Must include email. If no password it will be generated
+     * @param string $role_id the role_id.
+     * @return integer the new user id, or 0 if an error
+     */
+    public static function create_user($role_id, $attributes) {
+
+        if (empty($attributes['email'])) {
+            return 0;
+        }
+
+        global $vce;
         
+        // loop through to look for checkbox type input
+        foreach ($attributes as $input_key => $input_value) {
+            // for checkbox inputs
+            if (preg_match('/_\d+$/', $input_key, $matches)) {
+                // strip _1 off to find input value for checkbox
+                $new_input = str_replace($matches[0], '', $input_key);
+                // decode previous json object value for input variable
+                $new_value = isset($attributes[$new_input]) ? json_decode($attributes[$new_input], true) : array();
+                // add new value to array
+                $new_value[] = $input_value;
+                // remove the _1
+                unset($attributes[$input_key]);
+                // reset the input with json object
+                $attributes[$new_input] = json_encode($new_value);
+            }
+        }
+
+        $lookup = user::lookup($attributes['email']);
+
+        $vector = $vce->user->create_vector();
+
+        if (empty($attributes['password'])) {
+            $attributes['password'] = user::generate_password();
+        }
+
+        // call to user class to create_hash function
+        $hash = user::create_hash($attributes['email'], $attributes['password']);
+
+        $user_data = array(
+            'vector' => $vector,
+            'hash' => $hash,
+            'role_id' => $role_id,
+        );
+
+        $new_user_id = $vce->db->insert('users', $user_data);
+
+        user::add_user_meta_data($new_user_id, $vector, $attributes);
+
+        // the argument is treated as an integer, and presented as an unsigned decimal number.
+        sscanf(crc32($attributes['email']), "%u", $front);
+        sscanf(crc32(strrev($attributes['email'])), "%u", $back);
+        // ilkyo id
+        $ilkyo_id = $front . substr($back, 0, (14 - strlen($front)));
+
+        $records = array();
+
+        // add a lookup
+        $records[] = array(
+            'user_id' => $new_user_id,
+            'meta_key' => 'lookup',
+            'meta_value' => $lookup,
+            'minutia' => $ilkyo_id,
+        );
+
+        $vce->db->insert('users_meta', $records);
+
+        return $new_user_id;
+    }
+
+    /**
+     * Update an existing user
+     *
+     * @param integer $user_id the user id.
+     * @param string $attributes array of attributes and values.
+     * @param string $role_id the role_id.
+     * @return string return error message if there is an error, null if success
+     */
+    public static function update_user($user_id, $attributes, $role_id = null) {
+
+        global $vce;
+
+        // loop through to look for checkbox type input
+        foreach ($attributes as $input_key => $input_value) {
+            // for checkbox inputs
+            if (preg_match('/_\d+$/', $input_key, $matches)) {
+                // strip _1 off to find input value for checkbox
+                $new_input = str_replace($matches[0], '', $input_key);
+                // decode previous json object value for input variable
+                $new_value = isset($attributes[$new_input]) ? json_decode($attributes[$new_input], true) : array();
+                // add new value to array
+                $new_value[] = $input_value;
+                // remove the _1
+                unset($attributes[$input_key]);
+                // reset the input with json object
+                $attributes[$new_input] = json_encode($new_value);
+            }
+        }
+
+        $query = "SELECT role_id, vector FROM " . TABLE_PREFIX . "users WHERE user_id='" . $user_id . "'";
+        $user_info = $vce->db->get_data_object($query);
+
+        $current_role_id = $user_info[0]->role_id;
+        $vector = $user_info[0]->vector;
+
+        // has role_id been updated?
+        if (isset($role_id) && $role_id != $current_role_id) {
+
+            $update = array('role_id' => $role_id);
+            $update_where = array('user_id' => $user_id);
+            $vce->db->update('users', $update, $update_where);
+
+        }
+
+        // check if email has been changed
+		if (isset($attributes['email']) && $vce->user->email != $attributes['email']) {
+		
+			$attributes['email'] = filter_var(strtolower($attributes['email']), FILTER_SANITIZE_EMAIL);
+			
+			if (!filter_var($attributes['email'], FILTER_VALIDATE_EMAIL)) {
+				return 'Not a valid email address';
+			}
+			
+			// create lookup
+			$lookup = user::lookup($attributes['email']);
+			
+			// get user vector
+			$query = "SELECT id FROM " . TABLE_PREFIX . "users_meta WHERE meta_key='lookup' and meta_value='" . $lookup . "' LIMIT 1";
+			$lookup_check = $vce->db->get_data_object($query);
+			
+			if (!empty($lookup_check)) {
+				return 'Email is already in use';
+			}
+				
+			// call to user class to create_hash function
+			$hash = user::create_hash($vce->user->email, $attributes['password']);
+			
+			$query = "SELECT user_id FROM  " . TABLE_PREFIX . "users WHERE hash='" . $hash . "' LIMIT 1";
+			$password_check = $vce->db->get_data_object($query);
+			
+			// check that password is correct
+			if (empty($password_check)) {
+				return 'Password is not correct';
+			}
+            
+            // Now OK to change email
+
+			// call to user class to create_hash function
+			$hash = user::create_hash($attributes['email'], $attributes['password']);
+			
+			// update hash
+			$update = array( 'hash' => $hash);
+			$update_where = array( 'user_id' => $user_id);
+			$vce->db->update( 'users', $update, $update_where );
+			
+			// update hash
+			$update = array( 'meta_value' => $lookup);
+			$update_where = array('user_id' => $user_id, 'meta_key' => 'lookup');
+			$vce->db->update( 'users_meta', $update, $update_where );
+        }
+        
+        // delete old meta data
+        foreach ($attributes as $key => $value) {
+
+            // delete user meta from database
+            $where = array('user_id' => $user_id, 'meta_key' => $key);
+            $vce->db->delete('users_meta', $where);
+
+        }
+
+        user::add_user_meta_data($user_id, $vector, $attributes);
+
+        return null;
+    }
+
+    /**
+     * Read user based on user_id
+     *
+     * @param integer $user_id
+     * @param boolean $add_metadata true if additional metadata should be added to the user object
+     * @return the user object or null if not found
+     */
+    public static function read_user($user_id, $add_metadata = false) {
+
+        global $vce;
+
+        $query = "SELECT * FROM  " . TABLE_PREFIX . "users_meta WHERE meta_key='lookup' AND minutia='" . $user_id . "'";
+        $user = $vce->db->get_data_object($query);
+        if (sizeof($user) == 1) {
+            $user = $user[0];
+        }
+        else {
+            return null;
+        }
+
+        if ($add_metadata) {
+            $query = "SELECT user_id, meta_key, meta_value FROM  " . TABLE_PREFIX . "users_meta WHERE user_id = $user_id";
+            $meta_data = $vce->db->get_data_object($query);
+    
+            // add values to users array
+            foreach ($meta_data as $meta_item) {
+                $user->meta_key = user::decryption($meta_item->meta_value, $user->user_id);
+            }        
+        }
+
+        return $user;
+    }
+
+    /**
+     * Delete a user
+     *
+     * @param integer $user_id
+     * @return void
+     */
+    public static function delete_user($user_id) {
+
+        global $vce;
+
+        // delete user from database
+        $where = array('user_id' => $user_id);
+        $vce->db->delete('users', $where);
+
+        // delete user from database
+        $where = array('user_id' => $user_id);
+        $vce->db->delete('users_meta', $where);
+    }
+
+    /*
+    ** End CRUD functions
+    */
+
+    /**
+     * Add meta data to existing user
+     *
+     * @param integer $user_id
+     * @param string $vector
+     * @param array $attributes
+     * @return void
+     */
+    private static function add_user_meta_data($user_id, $vector, $attributes) {
+
+        global $vce;
+
+        // never store password
+        if (isset($attributes['password'])) {
+            unset($attributes['password']);
+        }
+
+        $user_attributes = json_decode($vce->site->user_attributes, true);
+
+        // start with default
+        $meta_attributes = array('email' => 'text');
+
+        // assign values into attributes for order preserving hash in minutia column
+        if (isset($user_attributes)) {
+            foreach ($user_attributes as $user_attributes_key => $user_attributes_value) {
+                if (isset($user_attributes_value['sortable']) && $user_attributes_value['sortable']) {
+                    $value = isset($user_attributes_value['type']) ? $user_attributes_value['type'] : null;
+                    $meta_attributes[$user_attributes_key] = $value;
+                }
+            }
+        }
+
+        $records = array();
+
+        foreach ($attributes as $key => $value) {
+
+            // encode user data
+            $encrypted = user::encryption($value, $vector);
+
+            $minutia = null;
+
+            // if this is a sortable text attribute
+            if (isset($meta_attributes[$key])) {
+                // check if this is a text field
+                if ($meta_attributes[$key] == 'text') {
+                    $minutia = user::order_preserving_hash($value);
+                }
+                // other option will go here
+            }
+
+            $records[] = array(
+                'user_id' => $user_id,
+                'meta_key' => $key,
+                'meta_value' => $encrypted,
+                'minutia' => $minutia,
+            );
+
+        }
+
+        // check that $records is not empty
+        if (!empty($records)) {
+            $vce->db->insert('users_meta', $records);
+        }
     }
 
     /**

@@ -853,10 +853,10 @@ EOF;
 			
 				// check if meta_data already exists, then update
 				if (isset($meta_data[$key])) {
-			
-					$update = array('meta_value' => $value);
-					$update_where = array('component_id' => $component_id, 'meta_key' => $key);
-					$db->update('components_meta', $update, $update_where);
+				
+					// add current to arrays for update
+					$updates[] = array('meta_value' => $value);
+					$updates_where[] = array('component_id' => $component_id, 'meta_key' => $key);			
 					
 				} else {
 				// meta_data doesn't exists, so create it
@@ -871,6 +871,11 @@ EOF;
 
 				}
 
+			}
+			
+			// if $records exists, insert meta_data
+			if (isset($updates) && isset($updates_where)) {
+				$db->update('components_meta', $updates, $updates_where);
 			}
 			
 			// if $records exists, insert meta_data
@@ -1012,7 +1017,7 @@ EOF;
 			$basepath = defined('INSTANCE_BASEPATH') ? INSTANCE_BASEPATH . PATH_TO_UPLOADS : BASEPATH . PATH_TO_UPLOADS;
 		
 			// path of file
-			$unlink_path = $basepath .  DIRECTORY_SEPARATOR  . $created_by[0]->meta_value . DIRECTORY_SEPARATOR  . $file_path[0]->meta_value;
+			$unlink_path = $basepath .  '/' . $created_by[0]->meta_value . '/' . $file_path[0]->meta_value;
 			
 			// make sure file exists before deleteing/unlinking it
 			if (file_exists($unlink_path)) {
@@ -1078,6 +1083,7 @@ EOF;
 		return;
 	
 	}
+
 
 	/**
 	 * Returns false instead of "Notice: Undefined property error" when reading data from inaccessible properties
